@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Ecommerce Insights</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    #typingIndicator::after {
+      content: '...';
+      animation: dots 1.2s steps(3, end) infinite;
+    }
+    @keyframes dots {
+      0%, 20% { content: ''; }
+      40% { content: '.'; }
+      60% { content: '..'; }
+      80%, 100% { content: '...'; }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 to-white min-h-screen py-12 px-4">
+  <div class="flex max-w-7xl mx-auto">
+    <!-- Sidebar -->
+    <aside class="w-64 mr-6 bg-white shadow-xl rounded-3xl p-6 h-fit border border-indigo-100">
+      <h2 class="text-xl font-bold text-indigo-600 mb-4">💡 Example Prompts</h2>
+      <ul class="space-y-2 text-sm text-gray-700">
+                <li class="cursor-pointer hover:text-indigo-700" onclick="fillPrompt('Show eligibility status by item for today')">• Show eligibility status by item for today</li>
+        <li class="cursor-pointer hover:text-indigo-700" onclick="fillPrompt('What is my total sales?')">• What is my total sales?</li>
+        <li class="cursor-pointer hover:text-indigo-700" onclick="fillPrompt('Which product had the highest CPC (Cost Per Click)?')">• Which product had the highest CPC (Cost Per Click)?</li>
+
+        <li class="cursor-pointer hover:text-indigo-700" onclick="fillPrompt('ROAS per day for the last month')">• ROAS per day for the last month</li>
+        <li class="cursor-pointer hover:text-indigo-700" onclick="fillPrompt('Who are the top 10 customers by purchase value?')">• Who are the top 10 customers by purchase value?</li>
+       <!--  <li class="cursor-pointer hover:text-indigo-700" onclick="fillPrompt('Show CPC (Cost Per Click) per day')">• Show CPC per day</li> -->
+
+      </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 bg-white shadow-2xl rounded-3xl p-10 border border-indigo-100">
+      <!-- <h1 class="text-5xl font-extrabold mb-6 text-center text-indigo-700 flex items-center justify-center gap-3">
+        🛒 AI Ecommerce Agent
+      </h1> -->
+
+<div class="flex items-center justify-center gap-4 mb-6">
+  <!-- Robot -->
+  <div class="relative w-20 h-24 animate-bounce">
+    <!-- Head -->
+    <div class="absolute top-0 left-1/2 transform -translate-x-1/2 bg-gray-800 w-10 h-10 rounded-full flex items-center justify-center">
+      <div class="w-2 h-2 bg-green-400 rounded-full mr-0.5"></div>
+      <div class="w-2 h-2 bg-green-400 rounded-full ml-0.5"></div>
+    </div>
+    <!-- Body -->
+    <div class="absolute top-10 left-1/2 transform -translate-x-1/2 w-12 h-14 bg-indigo-600 rounded-lg shadow-lg border-2 border-indigo-800"></div>
+    <!-- Arms -->
+    <div class="absolute top-12 left-0 w-2 h-8 bg-indigo-300 rounded-full"></div>
+    <div class="absolute top-12 right-0 w-2 h-8 bg-indigo-300 rounded-full"></div>
+    <!-- Legs -->
+    <div class="absolute bottom-0 left-4 w-2 h-6 bg-indigo-800 rounded"></div>
+    <div class="absolute bottom-0 right-4 w-2 h-6 bg-indigo-800 rounded"></div>
+  </div>
+
+  <!-- Heading -->
+  <h1 class="text-5xl font-extrabold text-center text-indigo-700 flex items-center gap-3">
+    AI Ecommerce Agent
+  </h1>
+</div>
+
+      
+      <p class="text-center text-gray-500 mb-8 text-lg">Ask questions like: <span class="italic text-indigo-500">"What is my total sales?", "Calculate ROAS"</span></p>
+
+      <div class="flex gap-3 items-center">
+        <input type="text" id="questionInput" class="flex-1 border border-gray-300 rounded-xl p-4 shadow focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Ask your question...">
+        <button onclick="submitQuestion()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl shadow transition duration-200 transform hover:scale-105">Ask</button>
+      </div>
+
+      <div id="output" class="mt-10 hidden">
+        <div class="text-sm text-indigo-400 mb-3 animate-pulse" id="typingIndicator">Processing...</div>
+
+        <h2 class="text-2xl font-semibold text-gray-700 mb-2">📄 Generated SQL:</h2>
+        <pre id="sqlOutput" class="bg-gray-100 p-4 rounded-lg text-sm overflow-x-auto mb-4 border border-gray-200"></pre>
+
+        <h2 class="text-2xl font-semibold text-gray-700 mb-2">📊 Results:</h2>
+        <div id="resultOutput" class="bg-gray-50 p-4 rounded-lg text-sm overflow-x-auto border border-gray-200"></div>
+
+        <button id="toggleChartBtn" onclick="toggleChart()" class="mt-6 hidden bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition duration-200 transform hover:scale-105">📈 Show Chart</button>
+        <canvas id="chart" class="mt-6 hidden h-96 rounded-xl shadow"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function fillPrompt(text) {
+      document.getElementById("questionInput").value = text;
+    }
+
+    async function submitQuestion() {
+      const question = document.getElementById("questionInput").value;
+      const outputDiv = document.getElementById("output");
+      const sqlOut = document.getElementById("sqlOutput");
+      const resultOut = document.getElementById("resultOutput");
+      const chartCanvas = document.getElementById("chart");
+      const toggleBtn = document.getElementById("toggleChartBtn");
+      const typing = document.getElementById("typingIndicator");
+      typing.classList.remove("hidden");
+      sqlOut.textContent = "";
+      resultOut.innerHTML = "";
+      chartCanvas.classList.add("hidden");
+      toggleBtn.classList.add("hidden");
+
+      outputDiv.classList.remove("hidden");
+
+      const response = await fetch("/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question })
+      });
+
+      const data = await response.json();
+      typing.classList.add("hidden");
+
+      if (data.error) {
+        sqlOut.textContent = "❌ Error: " + data.error;
+        resultOut.textContent = "";
+        return;
+      }
+
+      sqlOut.textContent = data.sql || "No SQL generated.";
+
+      const isSingleNumber = data.result.length === 1 && Object.keys(data.result[0]).length === 1;
+
+      if (isSingleNumber) {
+        const [key, value] = Object.entries(data.result[0])[0];
+        resultOut.innerHTML = `
+          <div class="bg-green-50 border border-green-400 text-green-700 px-4 py-4 rounded-lg shadow">
+            <strong class="font-bold text-xl">${key.replaceAll('_', ' ')}:</strong>
+            <div class="text-4xl mt-2 font-semibold">₹${Number(value).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+          </div>
+        `;
+      } else if (data.result.length > 0) {
+        const headers = Object.keys(data.result[0]);
+
+        let table = '<div class="overflow-auto"><table class="table-auto w-full text-left border-collapse">';
+        table += '<thead><tr class="bg-gray-100">';
+        headers.forEach(header => {
+          table += `<th class="border px-4 py-2 capitalize text-gray-600 text-sm">${header.replace('_',' ')}</th>`;
+        });
+        table += '</tr></thead><tbody>';
+
+        data.result.forEach(row => {
+          table += '<tr class="border-b hover:bg-gray-50">';
+          headers.forEach(header => {
+            table += `<td class="border px-4 py-2 text-sm">${row[header]}</td>`;
+          });
+          table += '</tr>';
+        });
+
+        table += '</tbody></table></div>';
+        resultOut.innerHTML = table;
+
+        const labelKey = headers.find(h => h.toLowerCase().includes("date") || h.toLowerCase().includes("day") || h.toLowerCase().includes("month") || h.toLowerCase().includes("timestamp"));
+        const valueKey = headers.find(h => h !== labelKey && !isNaN(parseFloat(data.result[0][h])));
+
+        if (labelKey && valueKey) {
+          const labels = data.result.map(row => row[labelKey]);
+          const values = data.result.map(row => parseFloat(row[valueKey])).filter(v => !isNaN(v));
+
+          toggleBtn.classList.remove("hidden");
+
+          if (window.chartInstance) window.chartInstance.destroy();
+          window.chartInstance = new Chart(chartCanvas, {
+            type: 'line',
+            data: {
+              labels,
+              datasets: [{
+                label: valueKey.replaceAll('_', ' '),
+                data: values,
+                backgroundColor: 'rgba(139, 92, 246, 0.2)',
+                borderColor: 'rgb(139, 92, 246)',
+                borderWidth: 2,
+                fill: true,
+                pointRadius: 4,
+                pointHoverRadius: 6
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { position: 'top' },
+                title: { display: true, text: `${valueKey.replaceAll('_', ' ')} over time` }
+              },
+              scales: {
+                y: { beginAtZero: true },
+                x: { ticks: { autoSkip: true, maxTicksLimit: 10 } }
+              }
+            }
+          });
+        }
+      } else {
+        resultOut.textContent = "No results found.";
+      }
+    }
+
+    function toggleChart() {
+      const chart = document.getElementById("chart");
+      chart.classList.toggle("hidden");
+    }
+  </script>
+</body>
+</html>
